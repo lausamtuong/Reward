@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import '~antd-mobile/bundle/style.css';
+
+:root:root {
+  /* Currently internal variables: */
+  --adm-radius-s: 4px;
+  --adm-radius-m: 8px;
+  --adm-radius-l: 12px;
+
+  --adm-font-size-1: 9px;
+  --adm-font-size-2: 10px;
+  --adm-font-size-3: 11px;
+  --adm-font-size-4: 12px;
+  --adm-font-size-5: 13px;
+  --adm-font-size-6: 14px;
+  --adm-font-size-7: 15px;
+  --adm-font-size-8: 16px;
+  --adm-font-size-9: 17px;
+  --adm-font-size-10: 18px;
+
+  /* variables should be exposed to users: */
+  --adm-color-primary: #fe5f00;
+  --adm-color-success: #38a169;
+  --adm-color-warning: #fa8c16;
+  --adm-color-danger: #f5222d;
+
+  --adm-color-text: #333333;
+  --adm-color-text-secondary: #666666;
+  --adm-color-weak: #999999;
+  --adm-color-light: #cccccc;
+  --adm-color-border: #eeeeee;
+  --adm-color-background: #ffffff;
+
+  /* Deprecated. We use `--adm-color-text-light-solid` in code */
+  /* but keep here for compatible */
+  --adm-color-white: #ffffff;
+  --adm-color-box: #f5f5f5;
+
+  --adm-color-text-light-solid: var(--adm-color-white);
+  --adm-color-text-dark-solid: #000000;
+  --adm-color-fill-content: var(--adm-color-box);
+
+  --adm-font-size-main: var(--adm-font-size-5);
+
+  --adm-font-family: var(--font-gilroy);
+
+  /* The variables below are deprecated and only exist for backward compatibility: */
+  --adm-border-color: var(--adm-color-border);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:root {
+    /* --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0; */
+  }
+}
+
+:root {
+  --app-height: 100vh;
+}
+
+html {
+  @apply min-w-[360px] scroll-smooth;
+}
+
+body {
+  @apply flex min-h-screen select-none flex-col bg-[#F2F4F8];
+  /* color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+  -webkit-tap-highlight-color: "transparent"; */
+}
+
+.h-screen {
+  height: 100vh;
+  height: var(--app-height);
+}
+
+.min-h-screen {
+  min-height: 100vh;
+  min-height: var(--app-height);
+}
+
+.max-h-screen {
+  max-height: 100vh;
+  max-height: var(--app-height);
+}
+
+.adm-card-body {
+  @apply !p-0;
+}
+
+.adm-error-block img {
+  @apply mx-auto;
+}
+
+.adm-error-block .adm-error-block-description {
+  @apply mt-10;
+}
+
+.adm-error-block .adm-error-block-description-title {
+  @apply text-neutral-90 text-xl font-bold leading-8;
+}
+
+.adm-error-block .adm-error-block-description-subtitle {
+  @apply text-neutral-60 items-start text-sm font-normal;
+}
+
+.adm-jumbo-tabs .adm-jumbo-tabs-tab-list {
+  @apply items-start;
+}
+
+.adm-side-bar-item:hover {
+  @apply bg-neutral-10;
+}
+
+.adm-dialog.adm-dialog-my-reward .adm-dialog-body:not(.adm-dialog-with-image),
+.adm-dialog.adm-dialog-custom .adm-dialog-body:not(.adm-dialog-with-image),
+.adm-dialog.adm-dialog-headless .adm-dialog-body:not(.adm-dialog-with-image) {
+  @apply !pt-0;
+}
+
+.adm-dialog.adm-dialog-custom .adm-center-popup-wrap,
+.adm-dialog.adm-dialog-my-reward .adm-center-popup-wrap,
+.adm-dialog.adm-dialog-headless .adm-center-popup-wrap {
+  @apply !w-full !max-w-[440px] overflow-hidden rounded-lg;
+}
+
+.adm-dialog.adm-dialog-my-reward .adm-dialog-body,
+.adm-dialog.adm-dialog-custom .adm-dialog-body,
+.adm-dialog.adm-dialog-headless .adm-dialog-body {
+  @apply !bg-neutral-10 desktop:h-[620px] desktop:max-h-[620px] desktop:rounded-lg h-screen max-h-screen overflow-hidden rounded-none;
+}
+
+.adm-dialog.adm-dialog-my-reward .adm-dialog-title,
+.adm-dialog.adm-dialog-custom .adm-dialog-title,
+.adm-dialog.adm-dialog-headless .adm-dialog-title {
+  @apply z-20 mb-0 bg-white p-0;
+}
+
+.adm-dialog.adm-dialog-custom .adm-dialog-title {
+  @apply shadow-modal-header;
+}
+
+.adm-dialog.adm-dialog-my-reward .adm-dialog-content,
+.adm-dialog.adm-dialog-headless .adm-dialog-content {
+  @apply bg-neutral-10 desktop:h-auto desktop:max-h-[620px] h-screen max-h-screen p-0;
+}
+
+.adm-dialog.adm-dialog-custom .adm-dialog-footer,
+.adm-dialog.adm-dialog-headless .adm-dialog-footer {
+  @apply shadow-button-dock z-20 bg-white;
+}
+
+.adm-dialog.adm-dialog-custom .adm-dialog-footer .adm-dialog-action-row,
+.adm-dialog.adm-dialog-headless .adm-dialog-footer .adm-dialog-action-row {
+  @apply p-4;
+}
+
+.adm-dialog.adm-dialog-custom .adm-dialog-footer .adm-dialog-action-row button,
+.adm-dialog.adm-dialog-headless .adm-dialog-footer .adm-dialog-action-row button {
+  /* prettier-ignore */
+  @apply !bg-primary-50 hover:!bg-primary-60 !h-12 !rounded !text-white;
+}
+
+@media only screen and (max-width: 768px) {
+  .adm-dialog.adm-dialog-custom .adm-center-popup-body {
+    @apply h-screen max-h-screen rounded-none;
+  }
+  .adm-dialog.adm-dialog-custom .adm-center-popup-wrap {
+    @apply !max-w-[100vw];
+  }
+  .adm-dialog.adm-dialog-custom .adm-center-popup-body .adm-dialog-content {
+    @apply max-h-screen;
+  }
+  .adm-dialog.adm-dialog-my-reward .adm-center-popup-wrap,
+  .adm-dialog.adm-dialog-custom .adm-center-popup-wrap,
+  .adm-dialog.adm-dialog-headless .adm-center-popup-wrap {
+    @apply !w-full !max-w-[100vw] rounded-none;
+  }
+}
+
+.adm-dialog.adm-dialog-my-reward .adm-nav-bar,
+.adm-dialog.adm-dialog-my-reward .adm-tabs-header {
+  @apply bg-white;
+}
+
+.adm-dialog.adm-dialog-my-reward .adm-dialog-content .adm-tabs-header {
+  @apply sticky left-0 right-0 top-0 z-50 w-full;
+}
+
+.adm-tabs.adm-tabs-custom .adm-tabs-tab-wrapper {
+  @apply px-0;
+}
+
+.adm-tabs.adm-tabs-custom .adm-tabs-tab-wrapper > .adm-tabs-tab {
+  @apply text-neutral-40 w-full text-center text-base font-bold;
+}
+
+.adm-tabs.adm-tabs-custom .adm-tabs-tab-wrapper > .adm-tabs-tab.adm-tabs-tab-active {
+  @apply text-neutral-80;
+}
+.adm-modal.adm-modal-confirm .adm-center-popup-wrap {
+  @apply w-full !max-w-[375px] p-4;
+}
+
+.adm-modal.adm-modal-confirm .adm-modal-footer {
+  @apply h-auto;
+}
+
+.adm-collapse.adm-collapse-custom .adm-list {
+  --border-bottom: 'none';
+}
+.infinite .adm-list-body {
+  border: none !important;
+}

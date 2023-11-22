@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embedded Rewards Example</title>
+    <style>
+      #rewardsIframe {
+        height: 100%;
+        width: 100%;
+        border: none;
+      }
+
+      #rewardContainer {
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main id="rewardContainer">
+      <h1>Embedded Rewards Example</h1>
+      <p>Click the button below to init the Embedded page.</p>
+      <button id="open-rewards-modal" onclick="init()">Open Rewards</button>
+    </main>
+    <script>
+      const eventListeners = {
+        DESTROYED: () => {},
+      };
+
+      function destroy() {
+        var iframe = document.getElementById(iframeId);
+
+        // Pointing iframe to a blank page frees up most of the memory.
+        if (iframe) {
+          iframe.src = 'about:blank';
+          try {
+            iframe.contentWindow.document.write('');
+            iframe.contentWindow.document.clear();
+          } catch (e) {
+            console.log(e);
+          }
+
+          // Remove iframe from the page
+          iframe.parentNode.removeChild(iframe);
+        }
+
+        // remove container
+        const container = document.getElementById(`${iframeId}__container`);
+        if (container) {
+          container.parentNode.removeChild(container);
+        }
+
+        if (eventListeners && eventListeners['DESTROYED']) {
+          eventListeners.DESTROYED();
+        }
+
+        for (let key in eventListeners) {
+          delete eventListeners[key];
+        }
+
+        try {
+          window.removeEventListener('message', eventHandler, false);
+        } catch (e) {
+          console.log('window.removeEventListener e', e);
+        }
+      }
+
+      function init() {
+        const token = '';
+        const lang = 'vi';
+        const webinapp = 'ahauser';
+        const srcUrl = 'http://localhost:3000';
+
+        const sourceUrl = `${srcUrl}/rewards?protocol=gadget&lang=${lang}`;
+
+        const iframeId = 'rewardsIframe';
+
+        // Create RO Tool iframe
+        const iframeElement = document.createElement('iframe');
+        iframeElement.style.cssText = 'width: 100%;height: 100%;border: none;background-color: #fff;';
+        iframeElement.setAttribute('allowFullScreen', 'true');
+        iframeElement.name = iframeId;
+        iframeElement.id = iframeId;
+        iframeElement.src = sourceUrl;
+
+        const container_id = 'rewardContainer';
+
+        const customContainer = container_id && document.getElementById(container_id);
+
+        while (customContainer.firstElementChild) {
+          customContainer.firstElementChild.remove();
+        }
+
+        customContainer.appendChild(iframeElement);
+
+        const params = {
+          token,
+          lang,
+        };
+
+        if (webinapp) {
+          params.webinapp = webinapp;
+        }
+
+        window.addEventListener(
+          'message',
+          (event) => {
+            if (!event || event.origin !== new URL(sourceUrl).origin || !event.data) return;
+
+            let data;
+            try {
+              data = JSON.parse(event.data);
+            } catch (e) {
+              data = event.data;
+            }
+
+            if (data.id !== iframeId) return;
+
+            if (data.name === 'DESTROY') return destroy();
+
+            if (eventListeners[data.name]) {
+              eventListeners[data.name](data.data);
+            }
+          },
+          false,
+        );
+
+        postRobot.on('INIT_GADGET', { window: iframeElement.contentWindow }, () => params);
+
+        postRobot.on('REQUEST_TOKEN', { window: iframeElement.contentWindow }, () => {
+          alert('Token is expired. Please login again.');
+        });
+
+        postRobot.on('OPEN_PAGE', { window: iframeElement.contentWindow }, (res) => {
+          console.log('OPEN_PAGE', res);
+          if (res && res.data && res.data.href) {
+            window.location.href = res.data.href;
+          }
+        });
+      }
+    </script>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/post-robot/10.0.46/post-robot.min.js"
+      integrity="sha512-KXEk0ldGg9vxpsmm8lXTYk6k//E3F61DwtX0F82AtzGbL26YfOEZI5wwJnmny2fBPbp03qoCHiRD4Kz39I8vCg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"></script>
+  </body>
+</html>

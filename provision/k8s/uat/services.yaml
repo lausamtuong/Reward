@@ -1,0 +1,40 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+  namespace: web-app
+spec:
+  selector:
+    app: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: APP_NAME
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+  namespace: web-app
+  annotations:
+    kubernetes.io/ingress.class: 'kong'
+    konghq.com/override: kong-ingress
+    #konghq.com/plugins: user1-basic-auth
+spec:
+  tls:
+    - hosts:
+        - appv3uat.ahamove.com
+      secretName: ahamove
+  rules:
+    - host: appv3uat.ahamove.com
+      http:
+        paths:
+          - path: '/'
+            pathType: Prefix
+            backend:
+              service:
+                name: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+                port:
+                  number: 80

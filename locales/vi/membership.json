@@ -1,0 +1,22 @@
+{
+  "expired_point_message": "Ahaxu sẽ hết hạn vào",
+  "view_more": "Xem chi tiết",
+  "expired_point_sub_message": "Thực hiện 1 giao dịch bất kỳ trước ngày hết hạn để gia hạn hiệu lực sử dụng AhaXu",
+  "rank_and_benefit": "Hạng thành viên và Quyền lợi",
+  "rank": "Hạng thành viên",
+  "rewards_history": "Lịch sử điểm thưởng",
+  "rewards": "Ưu đãi",
+  "get_more_points": "Bí kíp tích điểm",
+  "upgrade_level_message": "Tích lũy thêm {{points}} điểm để lên hạng",
+  "member": "thành viên",
+  "gold": "vàng",
+  "platinum": "bạch kim",
+  "diamond": "kim cương",
+  "newMember": "Thành viên",
+  "goldMember": "Thành viên vàng",
+  "platinumMember": "Thành viên bạch kim",
+  "diamondMember": "Thành viên kim cương",
+  "history": {
+    "title": "Lịch sử điểm thưởng"
+  }
+}

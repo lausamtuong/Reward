@@ -1,0 +1,71 @@
+{
+  "rewards": "Ưu đãi",
+  "myRewards": "Ưu đãi của tôi",
+  "viewAll": "Xem tất cả",
+  "flashSale": "Flash Sale",
+  "category": "Danh mục",
+  "sortBy": "Lọc và sắp xếp",
+  "membership": "Hạng thành viên",
+  "redeemNow": "Đổi ngay",
+  "aboutThisVoucher": "Thông tin chi tiết",
+  "expiredAt": "Hết hạn vào",
+  "apply": "Áp dụng",
+  "sort": {
+    "sortBy": "Sắp xếp theo",
+    "new": "Mới nhất",
+    "popular": "Phổ biến",
+    "point_asc": "AhaXu từ thấp đến cao",
+    "point_desc": "AhaXu từ cao đến thấp"
+  },
+  "filter": {
+    "filterBy": "Lọc theo",
+    "is_flashsale": "Chỉ Hiện Flash Sale",
+    "is_redeemable": "Chỉ hiển thị ưu đãi tôi có thể đổi"
+  },
+  "allReward": "Tất cả ưu đãi",
+  "myReward": {
+    "active": "Mới",
+    "invalid": "Hết hiệu lực",
+    "dueDate": "Ngày Hết hạn",
+    "buttonActive": "Dùng ngay",
+    "useNow": "Dùng ngay",
+    "buttonInvalid": "Đã dùng",
+    "emptyTitle": "Bạn chưa đổi ưu đãi nào",
+    "emptyUsedTitle": "Chưa có ưu đãi hết hiệu lực",
+    "emptyNavigate": "Khám phá ưu đãi",
+    "emptyContent": "Tận dụng AhaXu để đổi các ưu đãi hấp dẫn bạn nhé!",
+    "emptyUsedContent": "Đừng quên sử dụng các ưu đãi đã đổi trước ngày hết hạn nhé!",
+    "useOn": "Đã dùng vào",
+    "expiredOn": "Hết hạn",
+    "term_condition": "Điều kiện sử dụng",
+    "office": "Địa chỉ áp dụng",
+    "pin_serial": "Số PIN và Serial",
+    "pin": "Mã PIN",
+    "serial": "Mã Serial",
+    "code": "Mã ưu đãi",
+    "code_instruction": "Đưa mã thanh toán này cho thu ngân tại quầy",
+    "coppied": "Đã sao chép mã"
+  },
+  "redeem": {
+    "redeem": "Đổi ưu đãi",
+    "messageConfirm": "Bạn chắc chắn muốn đổi phần thưởng này với",
+    "notNow": "Để sau",
+    "redeemNow": "Đổi ngay",
+    "viewReward": "Xem ưu đãi",
+    "close": "Đóng",
+    "redeemSuccess": "Đổi điểm thành công",
+    "redeemFail": "Đổi điểm không thành công",
+    "valid_until": "Có hiệu lực đến",
+    "you_already_have_this_voucher": "Bạn đang sở hữu {{voucher}} voucher này",
+    "seeNow": "Xem ngay",
+    "get_more_voucher": "Nhận thêm voucher"
+  },
+  "flash_sale": {
+    "expired": "Đã hết hạn",
+    "comingSoon": "Sắp diễn ra",
+    "outOfStock": "Hết số lượng",
+    "reward": "khuyến mãi"
+  },
+  "release_to_reload": "Thả để tải lại",
+  "empty_rewards": "Hiện chưa có ưu đãi nào, vui lòng quay lại sau."
+}

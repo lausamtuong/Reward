@@ -1,0 +1,7 @@
+.sidebar > div {
+  @apply block w-full;
+}
+
+.jumbo > div {
+  @apply border-none;
+}

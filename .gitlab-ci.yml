@@ -1,0 +1,358 @@
+image: alpine:latest
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: tcp://localhost:2375
+  DOCKER_TLS_CERTDIR: ''
+  TAG_VERSION: '1.0.0'
+
+stages:
+  - unit_test
+  - versioning
+  - build
+  - deploy
+  - release
+  - badges
+
+#######################
+##  unit_test deploy   ##
+#######################
+
+unit_test:
+  stage: unit_test
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/node:16-alpine
+  script:
+    - unit_test
+  only:
+    - develop
+    - uat
+    - master
+    - main
+
+notification:
+  stage: unit_test
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/node:12.18.1
+  script:
+    - notification
+  only:
+    - develop
+    - uat
+    - master
+    - main
+
+#######################
+##   build deploy    ##
+#######################
+
+build:
+  stage: build
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/docker:trivy
+  services:
+    - name: docker:20.10.22-dind
+      entrypoint: ['dockerd-entrypoint.sh', '--tls=false']
+  script:
+    - BUILD_VERSION=$(cat build.env 2>/dev/null || true)
+    - export BUILD_VERSION=${BUILD_VERSION:-$CI_COMMIT_SHA}
+    - build
+  only:
+    - branches
+  artifacts:
+    untracked: true
+  cache:
+    key: '$CI_PROJECT_NAME'
+
+#######################
+##   Staging deploy  ##
+#######################
+
+staging:
+  stage: deploy
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/docker-kubectl
+  variables:
+    RELEASE: 'staging'
+  script:
+    - deploy
+  environment:
+    name: staging
+  only:
+    refs:
+      - develop
+
+#######################
+##    Uat deploy     ##
+#######################
+
+uat:
+  stage: deploy
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/docker-kubectl
+  variables:
+    RELEASE: 'uat'
+  script:
+    - deploy
+  needs: ['build']
+  environment:
+    name: uat
+  only:
+    refs:
+      - uat
+
+#######################
+## Production deploy ##
+#######################
+
+production:
+  stage: deploy
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/docker-kubectl
+  variables:
+    RELEASE: 'production'
+  script:
+    - BUILD_VERSION=$(cat build.env 2>/dev/null || true)
+    - export BUILD_VERSION=${BUILD_VERSION:-$CI_COMMIT_SHA}
+    - deploy
+    - curl -XPOST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/repository/tags?tag_name=v${BUILD_VERSION}&ref=master&private_token=$CI_API_TOKEN"
+  environment:
+    name: production
+  when: manual
+  only:
+    refs:
+      - master
+
+#######################
+##   Badges deploy   ##
+#######################
+
+badges:
+  stage: badges
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/docker-badges
+  script:
+    - export BUILD_VERSION=$(cat build.env)
+    - badges -s version -v "v$BUILD_VERSION" -o go_build_version.svg -c yellow
+  needs: ['production', 'versioning']
+  allow_failure: true
+  when: on_success
+  except:
+    - tags
+  only:
+    refs:
+      - master
+  artifacts:
+    paths:
+      - go_build_version.svg
+
+#######################
+##  release deploy   ##
+#######################
+release:
+  stage: release
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/docker-kubectl
+  script:
+    - export BUILD_VERSION=$(cat build.env)
+    - CHANGELOG=$(sed ':a;N;$!ba;s/\n/\\r\\n- /g' CHANGELOG.md)
+    - HEADER="Content-Type:application/json"
+    - AUTH="PRIVATE-TOKEN:${CI_API_TOKEN}"
+    - DATA="{\"name\":\"Release v${BUILD_VERSION}\",\"tag_name\":\"v${BUILD_VERSION}\",\"description\":\"## CHANGELOG\r\n\r\n- ${CHANGELOG}\"}"
+    - echo "running release v${BUILD_VERSION}"
+    - echo "${HEADER} ${AUTH} ${DATA} ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases"
+    - curl --header "${HEADER}" --header "${AUTH}" --data "${DATA}" -X POST "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases"
+  needs: ['production', 'versioning']
+  only:
+    refs:
+      - master
+
+#######################
+## Versioning deploy ##
+#######################
+
+versioning:
+  stage: versioning
+  image: 967561843261.dkr.ecr.ap-southeast-1.amazonaws.com/docker-kubectl
+  script:
+    - git checkout -b tmp_version
+    - git fetch --tags --prune
+    - if [ $(git rev-parse --abbrev-ref HEAD) != "master" ]; then git branch --track master origin/master; fi
+    - export NEXT_VERSION=$(echo $(if [[ "$(echo $CI_COMMIT_TITLE | grep -E 'Merge branch .*(hotfix|hot-fix)')" ]]; then autotag -n -m hotfix.$(git rev-parse --short HEAD).$(date +%Y%m%d); else autotag -n; fi) | grep -E '\d+.\d+.\d+.*');
+    - export TAG_VERSION=${NEXT_VERSION:-$TAG_VERSION}
+    - echo $TAG_VERSION
+    - echo $TAG_VERSION | sed 's/+/-/' > build.env
+    - if [ $TAG_VERSION == "1.0.0" ]; then git log master --oneline > CHANGELOG.md;else git log $(git describe --tags $(git rev-list --tags --max-count=1))..master --oneline > CHANGELOG.md; fi
+  only:
+    refs:
+      - master
+  artifacts:
+    name: $CI_COMMIT_SHA
+    paths:
+      - build.env
+      - CHANGELOG.md
+
+#-----------------------------------
+.auto_devops: &auto_devops |
+
+  export CI_REGISTRY_HOST=967561843261.dkr.ecr.ap-southeast-1.amazonaws.com
+
+  function notification() {
+    if [[ -f send-telegram-message.sh ]]; then
+      if [[  "$CI_COMMIT_REF_NAME" == "develop" ]]; then
+        sh send-telegram-message.sh $PACKAGE_NAME -1 staging $CI_COMMIT_AUTHOR
+      elif [[  "$CI_COMMIT_REF_NAME" == "uat" ]]; then
+        sh send-telegram-message.sh $PACKAGE_NAME -1 uat $CI_COMMIT_AUTHOR
+      elif [[  "$CI_COMMIT_REF_NAME" == "master" || "$CI_COMMIT_REF_NAME" == "main" ]]; then
+        sh send-telegram-message.sh $PACKAGE_NAME -1 production $CI_COMMIT_AUTHOR
+      else
+        echo ""
+      fi
+    else
+      echo "not found send-telegram-message.sh"
+    fi
+  }
+
+  function unit_test() {
+    export STATUS=1
+    printenv > deploy-notes.txt
+    node -v
+    yarn -v
+    yarn install
+    yarn build --filter=./packages/*
+    yarn test --filter=$PACKAGE_NAME
+  }
+
+  function build() {
+    #apk add --no-cache --quiet py-pip
+    #pip install --upgrade pip
+    #pip install --quiet awscli
+
+    aws configure set aws_access_key_id "${ECR_ACCESS_KEY}"
+    aws configure set aws_secret_access_key "${ECR_ACCESS_TOKEN}"
+    $(aws ecr get-login --no-include-email --region  ap-southeast-1)
+    aws configure set default.region ap-southeast-1
+
+    echo "check-repository:""$CI_GROUP_NAME-$CI_PROJECT_NAME"
+    echo "build-version:""$BUILD_VERSION"
+    echo "branch:""$CI_COMMIT_REF_NAME"
+    echo "commit-title:""$CI_COMMIT_TITLE"
+    echo "package name:""$PACKAGE_NAME"
+    echo "template:""$TEMPLATE"
+
+    aws ecr describe-repositories --repository-names $CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME || aws ecr create-repository --repository-name $CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME
+    if [[ "$CI_COMMIT_REF_NAME" == "master" || "$CI_COMMIT_REF_NAME" == "uat" || "$CI_COMMIT_REF_NAME" == "develop" ]]; then
+      if [[  "$CI_COMMIT_REF_NAME" == "master" ]]; then
+        echo "$WORKSPACE_NAME/$PACKAGE_NAME/.env.prod $WORKSPACE_NAME/$PACKAGE_NAME/.env.production"
+        cp -rf $WORKSPACE_NAME/$PACKAGE_NAME/.env.prod $WORKSPACE_NAME/$PACKAGE_NAME/.env.production
+      elif [[ "$CI_COMMIT_REF_NAME" == "uat" ]]; then
+        echo "$WORKSPACE_NAME/$PACKAGE_NAME/.env.uat $WORKSPACE_NAME/$PACKAGE_NAME/.env.production"
+        cp -rf $WORKSPACE_NAME/$PACKAGE_NAME/.env.uat $WORKSPACE_NAME/$PACKAGE_NAME/.env.production
+      elif [[ "$CI_COMMIT_REF_NAME" == "develop" ]]; then
+        echo "$WORKSPACE_NAME/$PACKAGE_NAME/.env.stg $WORKSPACE_NAME/$PACKAGE_NAME/.env.production"
+        cp -rf $WORKSPACE_NAME/$PACKAGE_NAME/.env.stg $WORKSPACE_NAME/$PACKAGE_NAME/.env.production
+      else
+        echo ""
+      fi
+      if [[ -f $WORKSPACE_NAME/$PACKAGE_NAME/Dockerfile ]]; then
+        #build image
+        docker build \
+          --build-arg BUILD_WORKSPACE="$WORKSPACE_NAME" \
+          --build-arg BUILD_PACKAGE="$PACKAGE_NAME" \
+          --build-arg HTTP_PROXY="$HTTP_PROXY" \
+          --build-arg http_proxy="$http_proxy" \
+          --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
+          --build-arg https_proxy="$https_proxy" \
+          --build-arg FTP_PROXY="$FTP_PROXY" \
+          --build-arg ftp_proxy="$ftp_proxy" \
+          --build-arg NO_PROXY="$NO_PROXY" \
+          --build-arg no_proxy="$no_proxy" \
+          -f $WORKSPACE_NAME/$PACKAGE_NAME/Dockerfile \
+          -t "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME" \
+          -t "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:staging" \
+          -t "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:uat" \
+          -t "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$CI_COMMIT_SHA" \
+          -t "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$BUILD_VERSION" \
+          -t "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME" \
+          -t "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:staging" \
+          -t "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:uat" \
+          -t "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$CI_COMMIT_SHA" \
+          -t "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$CI_PIPELINE_IID" \
+          -t "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$BUILD_VERSION" .
+      else
+        echo "file Dockerfile not found!"
+        exit 1
+      fi
+      echo "Pushing to Container Registry..."
+      # image latest
+      # image latest
+      #docker push "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:latest"
+      #docker push "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:latest"
+      #docker push "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$CI_PIPELINE_IID"
+      if [[ "$CI_COMMIT_REF_NAME" == "develop" ]]; then
+        echo "push $CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:staging"
+        docker push "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:staging"
+        #echo "push $AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:staging"
+        #docker push "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:staging"
+      fi
+      if [[ "$CI_COMMIT_REF_NAME" == "master" ]]; then
+        # image with build version
+        #echo "push $CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:staging"
+        #docker push "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:staging"
+        #echo "push $CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$CI_COMMIT_SHA"
+        #docker push "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$CI_COMMIT_SHA"
+        echo "push $CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$BUILD_VERSION"
+        docker push "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:$BUILD_VERSION"
+      fi
+      if [[ "$CI_COMMIT_REF_NAME" == "uat" ]]; then
+        # image with build version
+        echo "push $CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:uat"
+        docker push "$CI_REGISTRY_HOST/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:uat"
+        #echo "push $AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:uat"
+        #docker push "$AWS_ECR_URL/$CI_GROUP_NAME-$CI_PROJECT_NAME-$PACKAGE_NAME:uat"
+      fi
+
+      echo "END"
+    else
+      echo ""
+    fi
+  }
+
+  function deploy() {
+    #pre-config kubectl
+    if [[ "$RELEASE" == "production" ]]; then
+      aws configure set aws_access_key_id "${AWS_KEY}"
+      aws configure set aws_secret_access_key "${AWS_SECRET}"
+      aws eks --region ap-southeast-1 update-kubeconfig --name aha-new-eks-pro
+      kubectl get all
+    elif [[ "$RELEASE" == "uat" ]]; then
+      aws configure set aws_access_key_id "${AWS_KEY}"
+      aws configure set aws_secret_access_key "${AWS_SECRET}"
+      aws eks --region ap-southeast-1 update-kubeconfig --name aha-new-eks-uat
+      kubectl get all
+    elif [[ "$RELEASE" == "staging" ]]; then
+      aws configure set aws_access_key_id "${AWS_KEY}"
+      aws configure set aws_secret_access_key "${AWS_SECRET}"
+      aws eks --region ap-southeast-1 update-kubeconfig --name aha-new-eks-stg
+      kubectl get all
+    fi
+    #pre-config env
+    export _VERSION_="$CI_COMMIT_SHA"
+    export DATE=`date +%s`
+
+    echo "release:""$RELEASE"
+    echo "build-version:""$BUILD_VERSION"
+    echo "ci_commit_sha:""$CI_COMMIT_SHA"
+    echo "package name:""$PACKAGE_NAME"
+    #deploy
+    if [[ "$RELEASE" == "staging" ]]; then
+      sed 's/_VERSION_/'"staging"'/g; s/_CI_REGISTRY_HOST_/'"$CI_REGISTRY_HOST"'/g; s/_CI_GROUP_NAME_/'"$CI_GROUP_NAME"'/g; s/APP_NAME/'"$CI_PROJECT_NAME"'/g; s/PACKAGE_NAME/'"$PACKAGE_NAME"'/g; s/SHORT_NAME/'"$SHORT_NAME"'/g; s/_DATE_/'"$DATE"'/g; s/env-/'"$RELEASE-"'/g' ./$WORKSPACE_NAME/$PACKAGE_NAME/provision/k8s/staging/* > deployment.yaml
+      cat deployment.yaml
+      kubectl apply -f deployment.yaml
+    elif [[ "$RELEASE" == "uat" ]]; then
+      sed 's/_VERSION_/'"uat"'/g; s/_CI_REGISTRY_HOST_/'"$CI_REGISTRY_HOST"'/g; s/_CI_GROUP_NAME_/'"$CI_GROUP_NAME"'/g; s/APP_NAME/'"$CI_PROJECT_NAME"'/g; s/PACKAGE_NAME/'"$PACKAGE_NAME"'/g; s/SHORT_NAME/'"$SHORT_NAME"'/g; s/_DATE_/'"$DATE"'/g; s/env-/'"$RELEASE-"'/g' ./$WORKSPACE_NAME/$PACKAGE_NAME/provision/k8s/uat/* > deployment.yaml
+      cat deployment.yaml
+      kubectl apply -f deployment.yaml
+    elif [[ "$RELEASE" == "production" ]]; then
+      sed 's/_VERSION_/'"$BUILD_VERSION"'/g; s/_CI_REGISTRY_HOST_/'"$CI_REGISTRY_HOST"'/g; s/_CI_GROUP_NAME_/'"$CI_GROUP_NAME"'/g; s/APP_NAME/'"$CI_PROJECT_NAME"'/g; s/PACKAGE_NAME/'"$PACKAGE_NAME"'/g; s/SHORT_NAME/'"$SHORT_NAME"'/g; s/_DATE_/'"$DATE"'/g; s/env-/'"$RELEASE-"'/g' ./$WORKSPACE_NAME/$PACKAGE_NAME/provision/k8s/production/* > deployment.yaml
+      cat deployment.yaml
+      kubectl apply -f deployment.yaml
+    else
+      echo "none"
+    fi
+  }
+
+before_script:
+  - *auto_devops

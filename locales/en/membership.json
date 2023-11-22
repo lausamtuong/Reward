@@ -1,0 +1,22 @@
+{
+  "expired_point_message": "points will expire on",
+  "view_more": "View detail",
+  "expired_point_sub_message": "Make any 1 transaction before the expiration date to extend the validity of the bonus points.",
+  "rank_and_benefit": "Membership tier and benefits",
+  "rank": "Membership",
+  "rewards_history": "Rewards history",
+  "rewards": "Rewards",
+  "get_more_points": "How to get points?",
+  "upgrade_level_message": "Need more {{points}} AhaPoint to upgrade to",
+  "member": "member",
+  "gold": "gold",
+  "platinum": "platinum",
+  "diamond": "diamond",
+  "newMember": "member",
+  "platinumMember": "platinum member",
+  "goldMember": "gold member",
+  "diamondMember": "diamond member",
+  "history": {
+    "title": "Points history"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "slogan": "Giải pháp hoàn hảo cho mọi nhu cầu giao hàng của bạn",
+  "IndexPage": {
+    "title": "Trang chủ"
+  },
+  "NotFoundPage": {
+    "title": "Trang web không tồn tại",
+    "description": "Xin lỗi, chúng tôi không thể tìm thấy trang bạn đang tìm kiếm."
+  },
+  "BearPage": {
+    "title": "Hướng dẫn sử dụng Zustand",
+    "quantity": "Số lượng"
+  },
+  "Error": {
+    "title": "Something went wrong!",
+    "description": "<0>We've unfortunately encountered an error.</0><0>You can try to <1>reload the page</1> you were visiting.</0>"
+  }
+}

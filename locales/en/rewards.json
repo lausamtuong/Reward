@@ -1,0 +1,70 @@
+{
+  "rewards": "Reward",
+  "myRewards": "My Rewards",
+  "viewAll": "View All",
+  "flashSale": "Flash Sale",
+  "category": "Category",
+  "sortBy": "Filter and sort",
+  "membership": "Membership",
+  "redeemNow": "Redeem Now",
+  "aboutThisVoucher": "Detail",
+  "expiredAt": "Expired at",
+  "apply": "Apply",
+  "buttonApply": "Apply",
+  "sort": {
+    "sortBy": "Sort by",
+    "new": "Newest",
+    "popular": "Popular",
+    "point_asc": "AhaXu from low to high",
+    "point_desc": "AhaXu from high to low"
+  },
+  "filter": {
+    "filterBy": "Filter by",
+    "is_flashsale": "Show Flash Sale",
+    "is_redeemable": "Only show rewards I can redeem"
+  },
+  "allReward": "All",
+  "myReward": {
+    "active": "Active",
+    "invalid": "Invalid",
+    "dueDate": "Due date",
+    "buttonActive": "Use now",
+    "buttonInvalid": "Used",
+    "emptyTitle": "You haven't redeemed any rewards yet",
+    "emptyNavigate": "Explore rewards",
+    "emptyContent": "Don't forget to use AhaCoin for exclusive rewards!",
+    "useOn": "Use On",
+    "expiredOn": "Expired On",
+    "term_condition": "Terms and conditions",
+    "office": "Office",
+    "pin_serial": "PIN and Serial",
+    "pin": "PIN",
+    "serial": "Serial",
+    "code": "Payment code",
+    "code_instruction": "Give this code to the cashier",
+    "useNow": "Use now"
+  },
+  "redeem": {
+    "redeem": "Redeem reward",
+    "messageConfirm": "Get this reward with",
+    "notNow": "Not now",
+    "redeemNow": "Redeem now",
+    "viewReward": "View reward",
+    "close": "Close",
+    "redeemSuccess": "Redeem successfully",
+    "redeemFail": "Redeem unsuccessfully",
+    "valid_until": "Valid until",
+    "you_already_have_this_voucher": "You currently own {{voucher}} vouchers",
+    "seeNow": "See now",
+    "coppied": "Coppied",
+    "get_more_voucher": "Get more voucher"
+  },
+  "flash_sale": {
+    "expired": "Expired",
+    "comingSoon": "Coming soon",
+    "outOfStock": "Out of stock",
+    "reward": "rewards"
+  },
+  "release_to_reload": "Release to reload",
+  "empty_rewards": "No rewards founded."
+}

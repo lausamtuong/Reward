@@ -1,0 +1,95 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+  labels:
+    app: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+  template:
+    metadata:
+      labels:
+        app: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+        date: '_DATE_'
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 20
+              preference:
+                matchExpressions:
+                  - key: node.kubernetes.io/lifecycle
+                    operator: In
+                    values:
+                      - on-demand
+            - weight: 80
+              preference:
+                matchExpressions:
+                  - key: node.kubernetes.io/lifecycle
+                    operator: In
+                    values:
+                      - spot
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+              topologyKey: 'kubernetes.io/hostname'
+      terminationGracePeriodSeconds: 180
+      restartPolicy: Always
+      containers:
+        - name: _CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME
+          livenessProbe:
+            httpGet:
+              path: /api/monitor/healthcheck
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 15
+            timeoutSeconds: 20
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/_monitor/healthcheck
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 15
+            timeoutSeconds: 20
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 3
+          imagePullPolicy: Always
+          image: _CI_REGISTRY_HOST_/_CI_GROUP_NAME_-APP_NAME-PACKAGE_NAME:_VERSION_
+          ports:
+            - containerPort: 80
+          envFrom:
+          env:
+          resources:
+            requests:
+              memory: '384Mi'
+              cpu: '200m'
+            limits:
+              memory: '512Mi'
+              cpu: '300m'
+---
+
